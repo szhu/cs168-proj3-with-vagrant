@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"/..
+
+ID_FILE='.vagrant/machines/default/virtualbox/id'
+usage() {
+    echo "usage: ${BASH_SOURCE[0]} <VBox machine UUID>  # Omit the braces from the UUID"
+}
+
+if [ -e "$ID_FILE" ]; then
+    echo "error: Machine UUID already set. Use \`vagrant up\` or \`vagrant ssh\`."
+    echo "       To force reset the machine UUID, remove the current UUID file first:"
+    echo "       rm $ID_FILE"
+    exit 1
+elif [ -z "$1" ]; then
+    usage
+    echo "info: You can run \`VBoxManage list vms\` to get the machine UUID."
+    echo "      Here, I'll run it for you:"
+    VBoxManage list vms
+    exit 1
+fi
+UUID="$1"
+
+set -x
+
+dirname "$ID_FILE" | xargs mkdir -p
+echo -n "$UUID" > "$ID_FILE"
+VBoxManage snapshot "$UUID" take 'Pristine'
+vagrant up --provision
